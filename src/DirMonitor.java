@@ -7,83 +7,150 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.Iterator;
 
-
-public class DirMonitor{
+public class DirMonitor {
 	private Path myPath;
-	
-	public DirMonitor(Path myPath) throws IOException{
-		if (!(Files.isReadable(myPath)) || !(Files.isDirectory(myPath))){
+
+	public DirMonitor(Path myPath) throws IOException {
+		if (!(Files.isReadable(myPath)) || !(Files.isDirectory(myPath))) {
 			throw new IOException();
 		}
 		this.myPath = myPath;
 	}
-	
-	public void displayFiles() throws IOException{
-		
+
+	// displatFiles qui utilise la CLASSE SizeFilter
+	/*
+	 * public void displayFiles() throws IOException {
+	 * 
+	 * Iterator<Path> it = Files.newDirectoryStream(myPath).iterator();
+	 * SizeFilter sizeFilter= new SizeFilter(70);
+	 * 
+	 * while (it.hasNext()){
+	 * 
+	 * if((sizeFilter.accept(it.next()) == true)){
+	 * System.out.println(it.next()); } } }
+	 */
+
+	// displatFiles qui utilise la CLASSE INTERNE SizeFilter
+	/*
+	 * public void displayFiles() throws IOException {
+	 * 
+	 * Iterator<Path> it = Files.newDirectoryStream(myPath).iterator();
+	 * SizeFilter1 sizeFilter1 = new DirMonitor.SizeFilter1();
+	 * 
+	 * while (it.hasNext()){
+	 * 
+	 * if((sizeFilter1.accept(it.next()) == true)){
+	 * System.out.println(it.next()); } } }
+	 */
+
+	// displatFiles qui utilise la CLASSE INTERNE SizeFilter
+	/*
+	 * public void displayFiles() throws IOException {
+	 * 
+	 * Iterator<Path> it = Files.newDirectoryStream(myPath).iterator();
+	 * SizeFilter1 sizeFilter1 = new DirMonitor.SizeFilter1();
+	 * 
+	 * while (it.hasNext()){
+	 * 
+	 * if((sizeFilter1.accept(it.next()) == true)){
+	 * System.out.println(it.next()); } } }
+	 */
+
+	// displatFiles qui utilise la CLASSE ANONYME SizeFilter
+	public void displayFiles() throws IOException {
+
 		Iterator<Path> it = Files.newDirectoryStream(myPath).iterator();
+		//SizeFilter1 sizeFilter1 = new DirMonitor.SizeFilter1();
 		
-		while (it.hasNext()){
-			System.out.println(it.next());
+		DirectoryStream.Filter<Path>  filer =  new DirectoryStream.Filter<Path>(){
 			
+			@Override	
+			public boolean accept(Path path) throws IOException {
+
+				Files files = null;
+				long nOctetsFile = files.size(path);
+
+				// Si le nombre d'octets est plus grand ou égal qu'un certain N octets
+				// alors on return true sinon false
+				if (nOctetsFile >=  10 && !(Files.isDirectory(path))) {
+					return true;
+				}
+
+				return false;
+
+			}
+            
+        };
+        
+		while (it.hasNext()) {
+
+			if ((filer.accept(it.next()) == true)) {
+				System.out.println(it.next());
+			}
 		}
 	}
-	
-	public long sizeOfFiles() throws IOException{
-		
-		long size=0;		
-		
+
+	public long sizeOfFiles() throws IOException {
+
+		long size = 0;
+
 		Iterator<Path> it = Files.newDirectoryStream(myPath).iterator();
-		
-		while (it.hasNext()){
-			Path path =it.next();
-			
-			if(!(Files.isDirectory(path)))
-			size += Files.size(path);
-			 
+
+		while (it.hasNext()) {
+			Path path = it.next();
+
+			if (!(Files.isDirectory(path)))
+				size += Files.size(path);
+
 		}
-		
+
 		// renvoie des octets
 		return size;
-		 
+
 	}
-	
-	
-	public Path mostRecent() throws IOException{
-		FileTime mr= FileTime.fromMillis(0) ; //most recent
+
+	public Path mostRecent() throws IOException {
+		FileTime mr = FileTime.fromMillis(0); // most recent
 		Path path = null;
-		 
-		for ( Path allFiles : Files.newDirectoryStream(myPath)){
-			if(mr.compareTo(Files.getLastModifiedTime(allFiles)) < 0){
+
+		for (Path allFiles : Files.newDirectoryStream(myPath)) {
+			if (mr.compareTo(Files.getLastModifiedTime(allFiles)) < 0) {
 				path = allFiles;
 				mr = Files.getLastModifiedTime(allFiles);
 			}
 		}
-		
-		return path;	
+
+		return path;
 	}
-	
-	/*
-	class SizeFilter implements DirectoryStream.Filter<Path>
-{
-		
+
+	class SizeFilter1 implements DirectoryStream.Filter<Path> {
+		private long sizeFiltre;
 
 		@Override
-		public boolean accept(Path arg0) throws IOException {
-			// TODO Auto-generated method stub
+		public boolean accept(Path path) throws IOException {
+
+			Files files = null;
+			long nOctetsFile = files.size(path);
+
+			// Si le nombre d'octets est plus grand ou égal qu'un certain N
+			// octets
+			// alors on return true sinon false
+			if (nOctetsFile >= this.sizeFiltre && !(Files.isDirectory(path))) {
+				return true;
+			}
+
 			return false;
-		}	
-		
+
+		}
+
 	}
-	
-	*/
+
 	public static void main(String[] args) throws IOException {
 		DirMonitor dm = new DirMonitor(Paths.get("."));
+		System.out.println("Les dossiers:");
 		dm.displayFiles();
-		System.out.println(dm.sizeOfFiles());
-		System.out.println(dm.mostRecent());
+		System.out.println("Taille en octet du ficher: " + dm.sizeOfFiles());
+		System.out.println("La modification la plus récente: " + dm.mostRecent());
 	}
-	
-	
-	
-	
+
 }
